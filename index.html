@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mike Little - Personal Website</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>ile
+        <section class="hero">
+            <img src="profile.png" alt="Michael Little" class="profile-photo">
+            <h1>Mike Little</h1>
+            <p class="tagline">Cloud Builder & AWS Enthusiast</p>
+            <a href="https://builder.aws.com/community/@mikelnyc" target="_blank" class="aws-link">AWS Builder Center Profile</a>
+        </section>
+
+        <section class="fun-facts">
+            <h3>Fun Facts About Me</h3>
+            <div class="facts-grid">
+                <div class="fact-card">
+                    <h4>🚀 Challenge In Progress</h4>
+                    <p>Currently working on <a href="https://builder.aws.com/content/31C2WxIDSQive7q2Dv5xNFCmYJj/aws-builder-challenge-2-build-a-website-on-the-cloud?trk=86c76c09-e8f4-4138-badc-604ce7bc5d77&sc_channel=el" target="_blank">AWS Builder Challenge #2: Build a website on the cloud!</a></p>
+                </div>
+                <div class="fact-card">
+                    <h4>🎯 Learning Goal</h4>
+                    <p>Looking to conquer Bedrock and related services one step at a time</p>
+                </div>
+                <div class="fact-card">
+                    <h4>💡 Fun Project</h4>
+                    <p>This website is hosted on Amazon S3 with CloudFront for global delivery!</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="aws-journey">
+            <h3>AWS Builder Challenge #2</h3>
+            <p>I'm currently working on the "Build a website on the cloud" challenge, learning to deploy websites using AWS S3 and CloudFront. This site is part of my challenge progress!</p>
+            <a href="https://builder.aws.com/content/31C2WxIDSQive7q2Dv5xNFCmYJj/aws-builder-challenge-2-build-a-website-on-the-cloud?trk=86c76c09-e8f4-4138-badc-604ce7bc5d77&sc_channel=el" target="_blank" class="cta-button">View Challenge Details</a>
+        </section>
+
+        <!-- CONTACT FORM SECTION - Added for user contact functionality -->
+        <section class="contact-form">
+            <h3>Get In Touch</h3>
+            <p>Have a question or want to connect? Send me a message!</p>
+            <!-- Form message container for success/error messages -->
+            <div id="form-message" class="form-message" style="display: none;"></div>
+            <form class="contact-form-container">
+                <!-- Contact form input fields -->
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" rows="5" required></textarea>
+                </div>
+                <!-- Contact form submit button -->
+                <button type="submit" class="contact-submit-btn">Send Message</button>
+            </form>
+        </section>
+        <!-- END CONTACT FORM SECTION -->
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Michael Little. Built with ❤️ on AWS</p>
+    </footer>
+    
+    <!-- Contact form JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
