@@ -1064,3 +1064,27 @@ footer {
             cursor: pointer;
         }
     }
+
+    /* Compact Hero Section */
+    .hero {
+        padding: 40px 20px;  /* Reduce from whatever it currently is */
+    }
+
+    .hero .profile-photo {
+        width: 100px;  /* Smaller profile image */
+        height: 100px;
+    }
+
+    .hero h1 {
+        font-size: 2em;  /* Reduce main heading */
+        margin: 15px 0 5px 0;
+    }
+
+    .hero .tagline {
+        font-size: 1em;  /* Reduce tagline */
+        margin: 5px 0 15px 0;
+    }
+
+    .hero .aws-link {
+        font-size: 0.9em;  /* Reduce link size */
+    }
