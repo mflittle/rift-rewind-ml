@@ -365,6 +365,162 @@ main {
     background: #6b6ab8;
     transform: translateY(-1px);
 }
+
+/* LEAGUE LOOKUP STYLES */
+.league-lookup {
+    background: white;
+    border-radius: 8px;
+    padding: 40px;
+    margin-top: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.league-lookup h3 {
+    color: #232f3e;
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.league-lookup > p {
+    font-size: 16px;
+    color: #687078;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.lookup-form-container {
+    max-width: 500px;
+    margin: 0 auto 32px;
+}
+
+.lookup-message {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.lookup-message.success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.lookup-message.error {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #232f3e;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #f8fafc;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #c89b3c;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.1);
+}
+
+.lookup-submit-btn {
+    background: #c89b3c;
+    color: white;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: block;
+    margin: 0 auto;
+}
+
+.lookup-submit-btn:hover {
+    background: #b8862e;
+    transform: translateY(-1px);
+}
+
+.lookup-submit-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Results display */
+.summoner-results {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.summoner-card {
+    background: white;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.summoner-card h5 {
+    color: #c89b3c;
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.champions-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.champion-card {
+    background: white;
+    border-radius: 6px;
+    padding: 16px;
+    border-left: 4px solid #c89b3c;
+}
+
+.champion-card p {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .league-lookup {
+        padding: 24px;
+    }
+    
+    .champions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* END LEAGUE LOOKUP STYLES */
+
 /* END CONTACT FORM STYLES */
 
 footer {
