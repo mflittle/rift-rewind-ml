@@ -15,6 +15,52 @@
             <a href="https://builder.aws.com/community/@mikelnyc" target="_blank" class="aws-link">AWS Builder Center Profile</a>
         </section>
 
+        <!-- LEAGUE DATA LOOKUP SECTION - MOVED UP -->
+        <section class="league-lookup">
+            <div class="league-header">
+                <h3>League of Legends Stats</h3>
+                <p>Enter your Riot ID to view your summoner stats and top champions!</p>
+            </div>
+            
+            <div id="lookup-message" class="lookup-message" style="display: none;"></div>
+            
+            <div class="lookup-form-container">
+                <div class="form-group">
+                    <label for="summoner-name">Riot ID</label>
+                    <input type="text" id="summoner-name" name="summoner-name" placeholder="PlayerName#NA1" required>
+                    <small class="help-text">Format: GameName#Tagline (e.g., Doublelift#NA1)</small>
+                </div>
+                <div class="form-group">
+                    <label for="region">Region</label>
+                    <select id="region" name="region">
+                        <option value="na1">North America</option>
+                        <option value="euw1">Europe West</option>
+                        <option value="eune1">Europe Nordic & East</option>
+                        <option value="kr">Korea</option>
+                        <option value="br1">Brazil</option>
+                        <option value="la1">Latin America North</option>
+                        <option value="la2">Latin America South</option>
+                        <option value="oc1">Oceania</option>
+                        <option value="tr1">Turkey</option>
+                        <option value="ru">Russia</option>
+                        <option value="jp1">Japan</option>
+                    </select>
+                </div>
+                <button type="button" id="lookup-btn" class="lookup-submit-btn">
+                    <span class="btn-text">Search Summoner</span>
+                    <span class="btn-loader" style="display: none;">⏳</span>
+                </button>
+            </div>
+
+            <div id="summoner-results" class="summoner-results" style="display: none;">
+                <div class="summoner-header">
+                    <div id="summoner-info"></div>
+                </div>
+                <div id="champion-mastery" class="champion-mastery-container"></div>
+            </div>
+        </section>
+        <!-- END LEAGUE DATA LOOKUP SECTION -->
+
         <section class="fun-facts">
             <h3>Fun Facts About Me</h3>
             <div class="facts-grid">
@@ -60,51 +106,7 @@
                 <button type="submit" class="contact-submit-btn">Send Message</button>
             </form>
         </section>
-        
-        <!-- LEAGUE DATA LOOKUP SECTION -->
-        <section class="league-lookup">
-            <div class="league-header">
-                <h3>League of Legends Stats</h3>
-                <p>Enter your Riot ID to view your summoner stats and top champions!</p>
-            </div>
-            
-            <div id="lookup-message" class="lookup-message" style="display: none;"></div>
-            
-            <div class="lookup-form-container">
-                <div class="form-group">
-                    <label for="summoner-name">Riot ID</label>
-                    <input type="text" id="summoner-name" name="summoner-name" placeholder="PlayerName#NA1" required>
-                    <small class="help-text">Format: GameName#Tagline (e.g., Doublelift#NA1)</small>
-                </div>
-                <div class="form-group">
-                    <label for="region">Region</label>
-                    <select id="region" name="region">
-                        <option value="na1">North America</option>
-                        <option value="euw1">Europe West</option>
-                        <option value="eune1">Europe Nordic & East</option>
-                        <option value="kr">Korea</option>
-                        <option value="br1">Brazil</option>
-                        <option value="la1">Latin America North</option>
-                        <option value="la2">Latin America South</option>
-                        <option value="oc1">Oceania</option>
-                        <option value="tr1">Turkey</option>
-                        <option value="ru">Russia</option>
-                        <option value="jp1">Japan</option>
-                    </select>
-                </div>
-                <button type="button" id="lookup-btn" class="lookup-submit-btn">
-                    <span class="btn-text">Search Summoner</span>
-                    <span class="btn-loader" style="display: none;">⏳</span>
-                </button>
-            </div>
-
-            <div id="summoner-results" class="summoner-results" style="display: none;">
-                <div class="summoner-header">
-                    <div id="summoner-info"></div>
-                </div>
-                <div id="champion-mastery" class="champion-mastery-container"></div>
-            </div>
-        </section>
+        <!-- END CONTACT FORM SECTION -->
 
     </main>
 
