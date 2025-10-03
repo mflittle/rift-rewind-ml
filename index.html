@@ -64,10 +64,11 @@
             </form>
         </section>
         <!-- END CONTACT FORM SECTION -->
+        
          <!-- LEAGUE DATA LOOKUP SECTION -->
         <section class="league-lookup">
             <h3>League Data Lookup</h3>
-            <p>Enter a summoner name to see their level and top champions!</p>
+            <p>Enter your Riot ID to see your level and top champions!</p>
             
             <!-- Lookup message container for success/error messages -->
             <div id="lookup-message" class="lookup-message" style="display: none;"></div>
@@ -75,15 +76,15 @@
             <div class="lookup-form-container">
                 <!-- Summoner lookup form -->
                 <div class="form-group">
-                    <label for="summoner-name">Summoner Name</label>
-                    <input type="text" id="summoner-name" name="summoner-name" placeholder="Enter summoner name" required>
+                    <label for="summoner-name">Riot ID (Name#TAG)</label>
+                    <input type="text" id="summoner-name" name="summoner-name" placeholder="e.g., Doublelift#NA1" required>
                 </div>
                 <div class="form-group">
                     <label for="region">Region</label>
                     <select id="region" name="region">
                         <option value="na1">North America</option>
                         <option value="euw1">Europe West</option>
-                        <option value="eun1">Europe Nordic & East</option>
+                        <option value="eune1">Europe Nordic & East</option>
                         <option value="kr">Korea</option>
                         <option value="br1">Brazil</option>
                         <option value="la1">Latin America North</option>
@@ -105,7 +106,7 @@
                 <div id="champion-mastery"></div>
             </div>
         </section>
-<!-- END LEAGUE DATA LOOKUP SECTION -->
+        <!-- END LEAGUE DATA LOOKUP SECTION -->
 
     </main>
 
@@ -115,23 +116,31 @@
     
     <!-- Contact form JavaScript -->
     <script src="script.js"></script>
-    <!-- New Code-->
-        <script>
+    
+    <!-- League Data Lookup Script -->
+    <script>
         // League Data Lookup - Calls Riot API via Lambda
-        const RIOT_API_URL = 'https://2jdagsw3j3qyvx3cec5525y6tq0isiqv.lambda-url.us-east-1.on.aws/'; // New URL
+        const RIOT_API_URL = 'https://2jdagsw3j3qyvx3cec5525y6tq0isiqv.lambda-url.us-east-1.on.aws/';
+
         document.addEventListener('DOMContentLoaded', function() {
             const lookupBtn = document.getElementById('lookup-btn');
             const summonerNameInput = document.getElementById('summoner-name');
             const regionSelect = document.getElementById('region');
             
             lookupBtn.addEventListener('click', async function() {
-                const summonerName = summonerNameInput.value.trim();
-                const region = regionSelect.value;
+                const riotIdInput = summonerNameInput.value.trim();
+                const platform = regionSelect.value;
                 const messageDiv = document.getElementById('lookup-message');
                 const resultsDiv = document.getElementById('summoner-results');
                 
-                if (!summonerName) {
-                    showMessage('Please enter a summoner name', 'error');
+                if (!riotIdInput) {
+                    showMessage('Please enter a Riot ID (e.g., PlayerName#NA1)', 'error');
+                    return;
+                }
+                
+                // Check if input contains #
+                if (!riotIdInput.includes('#')) {
+                    showMessage('Riot ID must include tagline (e.g., PlayerName#NA1)', 'error');
                     return;
                 }
                 
@@ -141,6 +150,21 @@
                 messageDiv.style.display = 'none';
                 resultsDiv.style.display = 'none';
                 
+                // Map platform to region
+                const regionMap = {
+                    'na1': 'americas',
+                    'br1': 'americas',
+                    'la1': 'americas',
+                    'la2': 'americas',
+                    'euw1': 'europe',
+                    'eune1': 'europe',
+                    'tr1': 'europe',
+                    'ru': 'europe',
+                    'kr': 'asia',
+                    'jp1': 'asia',
+                    'oc1': 'sea'
+                };
+                
                 try {
                     const response = await fetch(RIOT_API_URL, {
                         method: 'POST',
@@ -148,8 +172,9 @@
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            summonerName: summonerName,
-                            region: region
+                            riotId: riotIdInput,
+                            region: regionMap[platform] || 'americas',
+                            platform: platform
                         })
                     });
                     
@@ -162,6 +187,7 @@
                         showMessage(data.error || 'Failed to fetch summoner data', 'error');
                     }
                 } catch (error) {
+                    console.error('Error:', error);
                     showMessage('Network error. Please try again.', 'error');
                 }
                 
@@ -177,7 +203,7 @@
                 }
             });
         });
-        
+
         function displaySummonerData(data) {
             const resultsDiv = document.getElementById('summoner-results');
             const summonerInfo = document.getElementById('summoner-info');
@@ -186,7 +212,7 @@
             // Display summoner info
             summonerInfo.innerHTML = `
                 <div class="summoner-card">
-                    <h5>${data.summoner.name}</h5>
+                    <h5>${data.summoner.gameName}#${data.summoner.tagLine}</h5>
                     <p>Level: ${data.summoner.level}</p>
                 </div>
             `;
@@ -213,7 +239,7 @@
             
             resultsDiv.style.display = 'block';
         }
-        
+
         function showMessage(text, type) {
             const messageDiv = document.getElementById('lookup-message');
             messageDiv.textContent = text;
