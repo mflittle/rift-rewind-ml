@@ -1,257 +1,217 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mike Little - Personal Website</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <main>
-        <section class="hero">
-            <img src="profile.png" alt="Michael Little" class="profile-photo">
-            <h1>Mike Little</h1>
-            <p class="tagline">Cloud Builder & AWS Enthusiast</p>
-            <a href="https://builder.aws.com/community/@mikelnyc" target="_blank" class="aws-link">AWS Builder Center Profile</a>
-        </section>
+import json
+import boto3
+import urllib3
 
-        <section class="fun-facts">
-            <h3>Fun Facts About Me</h3>
-            <div class="facts-grid">
-                <div class="fact-card">
-                    <h4>🚀 Challenge In Progress</h4>
-                    <p>Currently working on <a href="https://builder.aws.com/content/31C2WxIDSQive7q2Dv5xNFCmYJj/aws-builder-challenge-2-build-a-website-on-the-cloud?trk=86c76c09-e8f4-4138-badc-604ce7bc5d77&sc_channel=el" target="_blank">AWS Builder Challenge #2: Build a website on the cloud!</a></p>
-                </div>
-                <div class="fact-card">
-                    <h4>🎯 Learning Goal</h4>
-                    <p>Looking to conquer Bedrock and related services one step at a time</p>
-                </div>
-                <div class="fact-card">
-                    <h4>💡 Fun Project</h4>
-                    <p>This website is hosted on Amazon S3 with CloudFront for global delivery!</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="aws-journey">
-            <h3>AWS Builder Challenge #2</h3>
-            <p>I'm currently working on the "Build a website on the cloud" challenge, deploying websites using AWS S3 and CloudFront. This site is part of my challenge progress!</p>
-            <a href="https://builder.aws.com/content/31C2WxIDSQive7q2Dv5xNFCmYJj/aws-builder-challenge-2-build-a-website-on-the-cloud?trk=86c76c09-e8f4-4138-badc-604ce7bc5d77&sc_channel=el" target="_blank" class="cta-button">View Challenge Details</a>
-        </section>
-
-        <!-- CONTACT FORM SECTION - Added for user contact functionality -->
-        <section class="contact-form">
-            <h3>Get In Touch</h3>
-            <p>Have a question or want to connect? Send me a message!</p>
-            <!-- Form message container for success/error messages -->
-            <div id="form-message" class="form-message" style="display: none;"></div>
-            <form class="contact-form-container">
-                <!-- Contact form input fields -->
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="message">Message</label>
-                    <textarea id="message" name="message" rows="5" required></textarea>
-                </div>
-                <!-- Contact form submit button -->
-                <button type="submit" class="contact-submit-btn">Send Message</button>
-            </form>
-        </section>
-        <!-- END CONTACT FORM SECTION -->
+def lambda_handler(event, context):
+    print("Lambda invoked!")
+    
+    try:
+        body = json.loads(event['body'])
+        riot_id = body.get('riotId', '').strip()
+        region = body.get('region', 'americas')
         
-         <!-- LEAGUE DATA LOOKUP SECTION -->
-        <section class="league-lookup">
-            <h3>League Data Lookup</h3>
-            <p>Enter your Riot ID to see your level and top champions!</p>
-            
-            <!-- Lookup message container for success/error messages -->
-            <div id="lookup-message" class="lookup-message" style="display: none;"></div>
-            
-            <div class="lookup-form-container">
-                <!-- Summoner lookup form -->
-                <div class="form-group">
-                    <label for="summoner-name">Riot ID (Name#TAG)</label>
-                    <input type="text" id="summoner-name" name="summoner-name" placeholder="e.g., Doublelift#NA1" required>
-                </div>
-                <div class="form-group">
-                    <label for="region">Region</label>
-                    <select id="region" name="region">
-                        <option value="na1">North America</option>
-                        <option value="euw1">Europe West</option>
-                        <option value="eune1">Europe Nordic & East</option>
-                        <option value="kr">Korea</option>
-                        <option value="br1">Brazil</option>
-                        <option value="la1">Latin America North</option>
-                        <option value="la2">Latin America South</option>
-                        <option value="oc1">Oceania</option>
-                        <option value="tr1">Turkey</option>
-                        <option value="ru">Russia</option>
-                        <option value="jp1">Japan</option>
-                    </select>
-                </div>
-                <!-- Lookup submit button -->
-                <button type="button" id="lookup-btn" class="lookup-submit-btn">Look Up Summoner</button>
-            </div>
-
-            <!-- Results display area -->
-            <div id="summoner-results" class="summoner-results" style="display: none;">
-                <h4>Summoner Info</h4>
-                <div id="summoner-info"></div>
-                <div id="champion-mastery"></div>
-            </div>
-        </section>
-        <!-- END LEAGUE DATA LOOKUP SECTION -->
-
-    </main>
-
-    <footer>
-        <p>&copy; 2025 Michael Little. Built with ❤️ on AWS</p>
-    </footer>
-    
-    <!-- Contact form JavaScript -->
-    <script src="script.js"></script>
-    
-    <!-- League Data Lookup Script -->
-    <script>
-        // League Data Lookup - Calls Riot API via Lambda
-        const RIOT_API_URL = 'https://2jdagsw3j3qyvx3cec5525y6tq0isiqv.lambda-url.us-east-1.on.aws/';
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const lookupBtn = document.getElementById('lookup-btn');
-            const summonerNameInput = document.getElementById('summoner-name');
-            const regionSelect = document.getElementById('region');
-            
-            lookupBtn.addEventListener('click', async function() {
-                const riotIdInput = summonerNameInput.value.trim();
-                const platform = regionSelect.value;
-                const messageDiv = document.getElementById('lookup-message');
-                const resultsDiv = document.getElementById('summoner-results');
-                
-                if (!riotIdInput) {
-                    showMessage('Please enter a Riot ID (e.g., PlayerName#NA1)', 'error');
-                    return;
-                }
-                
-                // Check if input contains #
-                if (!riotIdInput.includes('#')) {
-                    showMessage('Riot ID must include tagline (e.g., PlayerName#NA1)', 'error');
-                    return;
-                }
-                
-                // Show loading state
-                lookupBtn.textContent = 'Looking up...';
-                lookupBtn.disabled = true;
-                messageDiv.style.display = 'none';
-                resultsDiv.style.display = 'none';
-                
-                // Map platform to region
-                const regionMap = {
-                    'na1': 'americas',
-                    'br1': 'americas',
-                    'la1': 'americas',
-                    'la2': 'americas',
-                    'euw1': 'europe',
-                    'eune1': 'europe',
-                    'tr1': 'europe',
-                    'ru': 'europe',
-                    'kr': 'asia',
-                    'jp1': 'asia',
-                    'oc1': 'sea'
-                };
-                
-                try {
-                    const response = await fetch(RIOT_API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            riotId: riotIdInput,
-                            region: regionMap[platform] || 'americas',
-                            platform: platform
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        displaySummonerData(data);
-                        showMessage('Summoner found!', 'success');
-                    } else {
-                        showMessage(data.error || 'Failed to fetch summoner data', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showMessage('Network error. Please try again.', 'error');
-                }
-                
-                // Reset button
-                lookupBtn.textContent = 'Look Up Summoner';
-                lookupBtn.disabled = false;
-            });
-            
-            // Enter key support
-            summonerNameInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    lookupBtn.click();
-                }
-            });
-        });
-
-        function displaySummonerData(data) {
-            const resultsDiv = document.getElementById('summoner-results');
-            const summonerInfo = document.getElementById('summoner-info');
-            const championMastery = document.getElementById('champion-mastery');
-            
-            // Display summoner info
-            summonerInfo.innerHTML = `
-                <div class="summoner-card">
-                    <h5>${data.summoner.gameName}#${data.summoner.tagLine}</h5>
-                    <p>Level: ${data.summoner.level}</p>
-                </div>
-            `;
-            
-            // Display top champions
-            if (data.topChampions && data.topChampions.length > 0) {
-                const championsHtml = data.topChampions.map(champ => `
-                    <div class="champion-card">
-                        <p><strong>Champion ID:</strong> ${champ.championId}</p>
-                        <p><strong>Mastery Level:</strong> ${champ.championLevel}</p>
-                        <p><strong>Mastery Points:</strong> ${champ.championPoints.toLocaleString()}</p>
-                    </div>
-                `).join('');
-                
-                championMastery.innerHTML = `
-                    <h5>Top Champions</h5>
-                    <div class="champions-grid">
-                        ${championsHtml}
-                    </div>
-                `;
-            } else {
-                championMastery.innerHTML = '<p>No champion mastery data found.</p>';
+        # Validate Riot ID format
+        if not riot_id:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Riot ID is required',
+                    'message': 'Please enter your Riot ID in the format: GameName#TAG'
+                })
             }
-            
-            resultsDiv.style.display = 'block';
+        
+        if '#' not in riot_id:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Invalid Riot ID format',
+                    'message': 'Riot ID must include your tagline (e.g., PlayerName#NA1)'
+                })
+            }
+        
+        game_name, tag_line = riot_id.split('#', 1)
+        
+        if not game_name or not tag_line:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Invalid Riot ID',
+                    'message': 'Both game name and tagline are required'
+                })
+            }
+        
+        # Get API key from Parameter Store
+        print("Fetching API key from Parameter Store...")
+        ssm = boto3.client('ssm')
+        try:
+            parameter = ssm.get_parameter(
+                Name='/rift-rewind/riot-api-key',
+                WithDecryption=True
+            )
+            api_key = parameter['Parameter']['Value']
+            print("API key retrieved successfully")
+        except Exception as e:
+            print(f"Failed to retrieve API key: {str(e)}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Configuration error',
+                    'message': 'Unable to access API credentials'
+                })
+            }
+        
+        # Initialize HTTP client
+        http = urllib3.PoolManager()
+        headers = {'X-Riot-Token': api_key}
+        
+        # Step 1: Get PUUID using Account-V1 API
+        account_url = f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}"
+        print(f"Calling Account API: {account_url}")
+        
+        account_response = http.request('GET', account_url, headers=headers)
+        print(f"Account API response status: {account_response.status}")
+        
+        if account_response.status == 404:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({
+                    'error': 'Riot ID not found',
+                    'message': f'No account found for {game_name}#{tag_line}. Please check your Riot ID and try again.'
+                })
+            }
+        elif account_response.status == 403:
+            return {
+                'statusCode': 403,
+                'body': json.dumps({
+                    'error': 'API key expired',
+                    'message': 'The API key has expired. Please contact the site administrator.'
+                })
+            }
+        elif account_response.status == 429:
+            return {
+                'statusCode': 429,
+                'body': json.dumps({
+                    'error': 'Rate limit exceeded',
+                    'message': 'Too many requests. Please try again in a moment.'
+                })
+            }
+        elif account_response.status != 200:
+            error_data = account_response.data.decode('utf-8')
+            print(f"Error response: {error_data}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Failed to fetch account data',
+                    'message': 'Unable to retrieve account information from Riot servers'
+                })
+            }
+        
+        account_data = json.loads(account_response.data.decode('utf-8'))
+        puuid = account_data['puuid']
+        print(f"PUUID retrieved: {puuid}")
+        
+        # Step 2: Get summoner data using PUUID
+        platform = body.get('platform', 'na1')
+        summoner_url = f"https://{platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}"
+        print(f"Calling Summoner API: {summoner_url}")
+        
+        summoner_response = http.request('GET', summoner_url, headers=headers)
+        print(f"Summoner API response status: {summoner_response.status}")
+        
+        if summoner_response.status != 200:
+            error_data = summoner_response.data.decode('utf-8')
+            print(f"Error response: {error_data}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Failed to fetch summoner data',
+                    'message': 'Unable to retrieve summoner information'
+                })
+            }
+        
+        summoner_data = json.loads(summoner_response.data.decode('utf-8'))
+        print(f"Summoner data retrieved")
+        
+        # Step 3: Get champion mastery data
+        mastery_url = f"https://{platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3"
+        print(f"Calling mastery API: {mastery_url}")
+        
+        mastery_response = http.request('GET', mastery_url, headers=headers)
+        print(f"Mastery API response status: {mastery_response.status}")
+        
+        mastery_data = []
+        if mastery_response.status == 200:
+            mastery_data = json.loads(mastery_response.data.decode('utf-8'))
+        
+        # Step 4: Get champion names from Data Dragon
+        print("Fetching champion data from Data Dragon...")
+        ddragon_url = "https://ddragon.leagueoflegends.com/cdn/14.20.1/data/en_US/champion.json"
+        ddragon_response = http.request('GET', ddragon_url)
+        
+        champion_map = {}
+        if ddragon_response.status == 200:
+            ddragon_data = json.loads(ddragon_response.data.decode('utf-8'))
+            for champ_key, champ_data in ddragon_data['data'].items():
+                champion_map[int(champ_data['key'])] = {
+                    'name': champ_data['name'],
+                    'title': champ_data['title'],
+                    'image': champ_data['image']['full']
+                }
+        
+        # Enhance mastery data with champion names
+        enhanced_mastery = []
+        for champ in mastery_data:
+            champ_id = champ['championId']
+            champ_info = champion_map.get(champ_id, {
+                'name': f'Champion {champ_id}',
+                'title': 'Unknown',
+                'image': 'default.png'
+            })
+            enhanced_mastery.append({
+                'championId': champ_id,
+                'championName': champ_info['name'],
+                'championTitle': champ_info['title'],
+                'championImage': champ_info['image'],
+                'championLevel': champ['championLevel'],
+                'championPoints': champ['championPoints']
+            })
+        
+        # Format response
+        response_data = {
+            'summoner': {
+                'gameName': game_name,
+                'tagLine': tag_line,
+                'level': summoner_data['summonerLevel'],
+                'puuid': puuid,
+                'profileIconId': summoner_data.get('profileIconId', 0)
+            },
+            'topChampions': enhanced_mastery
         }
-
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('lookup-message');
-            messageDiv.textContent = text;
-            messageDiv.className = `lookup-message ${type}`;
-            messageDiv.style.display = 'block';
-            
-            // Auto-hide after 10 seconds
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 10000);
+        
+        print("Returning success response")
+        return {
+            'statusCode': 200,
+            'body': json.dumps(response_data)
         }
-    </script>
-
-</body>
-</html>
+        
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {str(e)}")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({
+                'error': 'Invalid request format',
+                'message': 'The request data is not properly formatted'
+            })
+        }
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Unexpected error: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': 'Internal server error',
+                'message': 'An unexpected error occurred. Please try again later.'
+            })
+        }
