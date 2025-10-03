@@ -510,6 +510,9 @@ main {
     font-size: 14px;
 }
 
+/* New Styles */
+
+
 @media (max-width: 768px) {
     .league-lookup {
         padding: 24px;
@@ -565,4 +568,500 @@ footer {
     .contact-form h3 {
         font-size: 24px;
     }
+
+    /* New Sizzle Styles */
+    /* ==========================================
+   GAMING-THEMED STYLES FOR LEAGUE LOOKUP
+   ========================================== */
+
+    /* League of Legends Section - Dark Gaming Theme */
+    .league-lookup {
+        background: linear-gradient(135deg, #0a1428 0%, #1a2942 100%);
+        padding: 60px 20px;
+        margin: 40px 0;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Animated background effect */
+    .league-lookup::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(76, 175, 80, 0.1) 0%, transparent 70%);
+        animation: pulse 15s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.3; }
+        50% { transform: scale(1.2) rotate(180deg); opacity: 0.6; }
+    }
+
+    .league-header {
+        text-align: center;
+        margin-bottom: 40px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .league-header h3 {
+        color: #4caf50;
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(76, 175, 80, 0.5),
+                    0 0 40px rgba(76, 175, 80, 0.3);
+        animation: glow 3s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+        0%, 100% { text-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3); }
+        50% { text-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.5); }
+    }
+
+    .league-header p {
+        color: #b0bec5;
+        font-size: 1.1em;
+    }
+
+    /* Form Styling */
+    .lookup-form-container {
+        max-width: 600px;
+        margin: 0 auto 40px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 30px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        position: relative;
+        z-index: 1;
+    }
+
+    .lookup-form-container .form-group {
+        margin-bottom: 25px;
+    }
+
+    .lookup-form-container label {
+        display: block;
+        color: #4caf50;
+        font-weight: bold;
+        margin-bottom: 8px;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .lookup-form-container input,
+    .lookup-form-container select {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        border-radius: 10px;
+        background: rgba(26, 41, 66, 0.8);
+        color: #fff;
+        font-size: 1em;
+        transition: all 0.3s ease;
+    }
+
+    .lookup-form-container input:focus,
+    .lookup-form-container select:focus {
+        outline: none;
+        border-color: #4caf50;
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .help-text {
+        display: block;
+        color: #78909c;
+        font-size: 0.85em;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
+    .lookup-submit-btn {
+        width: 100%;
+        padding: 18px;
+        background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .lookup-submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .lookup-submit-btn:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .lookup-submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+    }
+
+    .lookup-submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    .lookup-submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-loader {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Message Styling */
+    .lookup-message {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 15px 20px;
+        border-radius: 10px;
+        text-align: center;
+        font-weight: bold;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .lookup-message.success {
+        background: rgba(76, 175, 80, 0.2);
+        border: 2px solid #4caf50;
+        color: #4caf50;
+    }
+
+    .lookup-message.error {
+        background: rgba(244, 67, 54, 0.2);
+        border: 2px solid #f44336;
+        color: #f44336;
+    }
+
+    /* Results Section */
+    .summoner-results {
+        max-width: 900px;
+        margin: 0 auto;
+        animation: fadeInUp 0.5s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Summoner Card */
+    .summoner-card {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(46, 125, 50, 0.1) 100%);
+        padding: 30px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        margin-bottom: 40px;
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        box-shadow: 0 5px 25px rgba(76, 175, 80, 0.2);
+        transition: transform 0.3s ease;
+    }
+
+    .summoner-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 35px rgba(76, 175, 80, 0.3);
+    }
+
+    .profile-icon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid #4caf50;
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+        animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .summoner-details {
+        flex: 1;
+    }
+
+    .summoner-name {
+        color: #fff;
+        font-size: 2em;
+        margin: 0 0 10px 0;
+        font-weight: bold;
+    }
+
+    .summoner-name .tag {
+        color: #4caf50;
+        font-weight: normal;
+    }
+
+    .summoner-level {
+        color: #4caf50;
+        font-size: 1.3em;
+        margin: 0;
+        font-weight: bold;
+    }
+
+    /* Champion Mastery Section */
+    .champion-mastery-container {
+        position: relative;
+    }
+
+    .mastery-title {
+        color: #4caf50;
+        font-size: 1.8em;
+        margin-bottom: 30px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .champions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-top: 20px;
+    }
+
+    /* Individual Champion Card */
+    .champion-card {
+        background: linear-gradient(135deg, rgba(26, 41, 66, 0.95) 0%, rgba(10, 20, 40, 0.95) 100%);
+        padding: 25px;
+        border-radius: 15px;
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: cardSlideIn 0.5s ease backwards;
+    }
+
+    @keyframes cardSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .champion-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(76, 175, 80, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .champion-card:hover::before {
+        left: 100%;
+    }
+
+    .champion-card:hover {
+        transform: translateY(-10px) scale(1.03);
+        border-color: #4caf50;
+        box-shadow: 0 15px 40px rgba(76, 175, 80, 0.4);
+    }
+
+    .champion-rank {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2em;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.5);
+    }
+
+    .champion-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .champion-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        border: 3px solid #4caf50;
+        box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        transition: transform 0.3s ease;
+    }
+
+    .champion-card:hover .champion-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .champion-info {
+        flex: 1;
+    }
+
+    .champion-name {
+        color: #fff;
+        font-size: 1.4em;
+        margin: 0 0 5px 0;
+        font-weight: bold;
+    }
+
+    .champion-title {
+        color: #78909c;
+        font-size: 0.9em;
+        margin: 0;
+        font-style: italic;
+    }
+
+    /* Mastery Stats */
+    .mastery-stats {
+        margin-top: 15px;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(76, 175, 80, 0.2);
+    }
+
+    .stat-row:last-of-type {
+        border-bottom: none;
+        margin-bottom: 15px;
+    }
+
+    .stat-label {
+        color: #b0bec5;
+        font-size: 0.95em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .stat-value {
+        color: #4caf50;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+
+    .level-badge {
+        background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 1em;
+    }
+
+    /* Progress Bar */
+    .mastery-progress {
+        width: 100%;
+        height: 12px;
+        background: rgba(76, 175, 80, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #4caf50 0%, #66bb6a 50%, #4caf50 100%);
+        background-size: 200% 100%;
+        border-radius: 10px;
+        transition: width 1s ease;
+        animation: shimmer 2s linear infinite;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+
+    .no-data {
+        text-align: center;
+        color: #78909c;
+        padding: 40px;
+        font-size: 1.1em;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .league-header h3 {
+            font-size: 2em;
+        }
+        
+        .champions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .summoner-card {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .profile-icon {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .summoner-name {
+            font-size: 1.5em;
+        }
+    }
+
+    /* Interactive Hover Effect for Entire Section */
+    @media (hover: hover) {
+        .champion-card {
+            cursor: pointer;
+        }
+    }
+
 }
