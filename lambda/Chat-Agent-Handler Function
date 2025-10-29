@@ -1,4 +1,4 @@
-# Chat-Agent-Handler Lambda
+# Chat-Agent-Handler Lambda.py function
 import json
 import boto3
 import os
