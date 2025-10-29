@@ -654,6 +654,16 @@
         let isMinimized = false;
         let messageQueue = [];
         let conversationHistory = [];
+        let thinkingInterval = null;
+        let thinkingMessageIndex = 0;
+        
+        const thinkingMessages = [
+            '🤔 Thinking...',
+            '📚 Searching knowledge base...',
+            '🔍 Analyzing champion data...',
+            '⚡ Processing your question...',
+            '🎮 Almost there...'
+        ];
 
         // WebSocket Connection Management
         function connectToWebSocket() {
@@ -786,10 +796,22 @@
             
             typingDiv.className = 'typing-indicator';
             typingDiv.id = 'typingIndicator';
-            typingDiv.textContent = '🤔 Thinking...';
+            typingDiv.textContent = thinkingMessages[0];
             
             messagesContainer.appendChild(typingDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Reset and start the thinking message rotation
+            thinkingMessageIndex = 0;
+            clearInterval(thinkingInterval);
+            
+            thinkingInterval = setInterval(() => {
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) {
+                    thinkingMessageIndex = (thinkingMessageIndex + 1) % thinkingMessages.length;
+                    indicator.textContent = thinkingMessages[thinkingMessageIndex];
+                }
+            }, 15000); // Update every 15 seconds
         }
 
         function hideTypingIndicator() {
@@ -797,6 +819,9 @@
             if (typingIndicator) {
                 typingIndicator.remove();
             }
+            // Clear the thinking message interval
+            clearInterval(thinkingInterval);
+            thinkingInterval = null;
         }
 
         function showConnectingState() {
