@@ -5,6 +5,184 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mike Little - Personal Website</title>
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Chat Widget Styles -->
+    <style>
+        .chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: linear-gradient(135deg, #1e2328 0%, #0a1428 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(92, 219, 149, 0.3);
+            border: 2px solid #5cdb95;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .chat-container.minimized {
+            height: 60px;
+            transform: translateY(440px);
+        }
+
+        .chat-header {
+            background: rgba(92, 219, 149, 0.2);
+            padding: 15px;
+            border-radius: 15px 15px 0 0;
+            color: #5cdb95;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #5cdb95;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: rgba(30, 35, 40, 0.95);
+            margin: 10px;
+            border-radius: 10px;
+            max-height: 350px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #5cdb95;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px 14px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #5cdb95 0%, #4caf50 100%);
+            color: #1e2328;
+            margin-left: auto;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .assistant-message {
+            background: rgba(92, 219, 149, 0.15);
+            color: #e0e0e0;
+            margin-right: auto;
+            border: 1px solid rgba(92, 219, 149, 0.3);
+        }
+
+        .chat-input-container {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #5cdb95;
+            border-radius: 20px;
+            outline: none;
+            background: rgba(30, 35, 40, 0.8);
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(224, 224, 224, 0.5);
+        }
+
+        .chat-input:focus {
+            border-color: #5cdb95;
+            box-shadow: 0 0 10px rgba(92, 219, 149, 0.3);
+        }
+
+        .chat-send-btn {
+            background: linear-gradient(135deg, #5cdb95 0%, #4caf50 100%);
+            color: #1e2328;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .chat-send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(92, 219, 149, 0.5);
+        }
+
+        .chat-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .typing-indicator {
+            padding: 10px 14px;
+            background: rgba(92, 219, 149, 0.15);
+            border: 1px solid rgba(92, 219, 149, 0.3);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            font-style: italic;
+            color: #5cdb95;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .connection-status {
+            font-size: 12px;
+            opacity: 0.9;
+            font-weight: normal;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                width: calc(100% - 40px);
+                right: 20px;
+                left: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
     <main>
@@ -15,7 +193,7 @@
             <a href="https://builder.aws.com/community/@mikelnyc" target="_blank" class="aws-link">AWS Builder Center Profile</a>
         </section>
 
-        <!-- LEAGUE DATA LOOKUP SECTION - MOVED UP -->
+        <!-- LEAGUE DATA LOOKUP SECTION -->
         <section class="league-lookup">
             <div class="league-header">
                 <h3>League of Legends Stats</h3>
@@ -114,8 +292,37 @@
         <p>&copy; 2025 Michael Little. Built with ❤️ on AWS</p>
     </footer>
     
+    <!-- AI CHAT WIDGET -->
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header" onclick="toggleChat()">
+            <span>🎮 League Expert Chat</span>
+            <span class="connection-status" id="connectionStatus">Connecting...</span>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant-message">
+                👋 Hi! I'm your League of Legends AI expert powered by AWS Bedrock. Ask me about champions, strategies, builds, or any game mechanics!
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input 
+                type="text" 
+                class="chat-input" 
+                id="chatInput" 
+                placeholder="Ask about League of Legends..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="chat-send-btn" onclick="sendMessage()">
+                ➤
+            </button>
+        </div>
+    </div>
+    <!-- END AI CHAT WIDGET -->
+    
     <script src="script.js"></script>
     
+    <!-- RIOT API LOOKUP SCRIPT -->
     <script>
         const RIOT_API_URL = 'https://2jdagsw3j3qyvx3cec5525y6tq0isiqv.lambda-url.us-east-1.on.aws/';
 
@@ -277,6 +484,179 @@
                 messageDiv.style.display = 'none';
             }, 10000);
         }
+    </script>
+
+    <!-- AI CHAT WEBSOCKET SCRIPT -->
+    <script>
+        // YOUR WEBSOCKET API FROM CHALLENGE 6
+        const WEBSOCKET_URL = 'wss://unxbysrdih.execute-api.us-east-1.amazonaws.com/production';
+
+        let socket = null;
+        let isConnected = false;
+        let isMinimized = false;
+        let messageQueue = [];
+        let conversationHistory = [];
+
+        // WebSocket Connection Management
+        function connectToWebSocket() {
+            try {
+                updateConnectionStatus('Connecting...');
+                
+                socket = new WebSocket(WEBSOCKET_URL);
+                
+                socket.onopen = () => {
+                    console.log('✅ Connected to AI Chat WebSocket');
+                    updateConnectionStatus('Connected');
+                    isConnected = true;
+                    
+                    // Process any queued messages
+                    while (messageQueue.length > 0) {
+                        const queuedMessage = messageQueue.shift();
+                        socket.send(JSON.stringify(queuedMessage));
+                    }
+                };
+                
+                socket.onmessage = (event) => {
+                    try {
+                        const response = JSON.parse(event.data);
+                        console.log('📨 Received:', response);
+                        
+                        // Handle different message types from your Lambda
+                        if (response.type === 'chunk' && response.content) {
+                            displayMessage(response.content, 'assistant');
+                            hideTypingIndicator();
+                        } else if (response.type === 'end') {
+                            hideTypingIndicator();
+                        } else if (response.type === 'error') {
+                            hideTypingIndicator();
+                            displayMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error parsing message:', error);
+                        hideTypingIndicator();
+                    }
+                };
+                
+                socket.onclose = (evt) => {
+                    console.log('🔌 WebSocket closed:', evt.reason);
+                    isConnected = false;
+                    updateConnectionStatus('Disconnected');
+                    
+                    // Attempt to reconnect after 3 seconds
+                    setTimeout(connectToWebSocket, 3000);
+                };
+                
+                socket.onerror = (error) => {
+                    console.error('❌ WebSocket error:', error);
+                    updateConnectionStatus('Error');
+                    isConnected = false;
+                };
+                
+            } catch (error) {
+                console.error('❌ Connection error:', error);
+                updateConnectionStatus('Failed');
+            }
+        }
+
+        // Chat Interface Functions
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Display user message immediately
+            displayMessage(message, 'user');
+            showTypingIndicator();
+            
+            // Add to conversation history
+            conversationHistory.push({ role: "user", content: message });
+            
+            // Clear input
+            input.value = '';
+            
+            // Prepare message in the format your Lambda expects
+            const messageData = {
+                messages: conversationHistory
+            };
+            
+            // Send message through WebSocket
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(messageData));
+            } else {
+                // Queue message if not connected
+                messageQueue.push(messageData);
+                updateConnectionStatus('Reconnecting...');
+                connectToWebSocket();
+            }
+        }
+
+        function displayMessage(content, role) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            messageDiv.className = `message ${role}-message`;
+            messageDiv.textContent = content;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Add to conversation history if it's an assistant message
+            if (role === 'assistant') {
+                conversationHistory.push({ role: "assistant", content: content });
+            }
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.textContent = '🤔 Thinking...';
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.textContent = status;
+            
+            // Add visual indicators with League theme colors
+            statusElement.style.color = status === 'Connected' ? '#5cdb95' : 
+                                      status === 'Connecting...' ? '#FFD700' : '#FF6B6B';
+        }
+
+        function toggleChat() {
+            const chatContainer = document.getElementById('chatContainer');
+            isMinimized = !isMinimized;
+            
+            if (isMinimized) {
+                chatContainer.classList.add('minimized');
+            } else {
+                chatContainer.classList.remove('minimized');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Initialize WebSocket connection when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Initializing AI Chat WebSocket...');
+            connectToWebSocket();
+        });
     </script>
 
 </body>
