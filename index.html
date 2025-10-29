@@ -74,6 +74,17 @@
             background-color: #ffffff !important;
         }
 
+        /* Champion Card Click Enhancement */
+        .champion-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+
+        .champion-card:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 8px 20px rgba(92, 219, 149, 0.4) !important;
+            border-color: #5cdb95 !important;
+        }
+
         /* Chat Widget Styles */
         .chat-container {
             position: fixed;
@@ -517,7 +528,7 @@
                     const masteryPercent = Math.min((champ.championPoints / 200000) * 100, 100);
                     
                     return `
-                        <div class="champion-card" style="animation-delay: ${index * 0.1}s">
+                        <div class="champion-card" style="animation-delay: ${index * 0.1}s; cursor: pointer;" onclick="askAboutChampion('${champ.championName}')">
                             <div class="champion-rank">#${index + 1}</div>
                             <div class="champion-header">
                                 <img src="${champIconUrl}" alt="${champ.championName}" class="champion-icon">
@@ -592,6 +603,33 @@
             // Focus the chat input
             chatInput.focus();
             chatInput.select(); // Select the text so user can easily replace or edit
+        }
+
+        function askAboutChampion(championName) {
+            const chatInput = document.getElementById('chatInput');
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Pre-fill chat input with question about the clicked champion
+            const suggestion = `What are the best items and strategies for ${championName}?`;
+            chatInput.value = suggestion;
+            
+            // Expand chat if minimized
+            if (isMinimized) {
+                toggleChat();
+            }
+            
+            // Add a gentle pulse to draw attention to chat
+            chatContainer.style.animation = 'gentle-pulse 2s ease';
+            setTimeout(() => {
+                chatContainer.style.animation = '';
+            }, 2000);
+            
+            // Focus and select the text
+            chatInput.focus();
+            chatInput.select();
+            
+            // Scroll chat into view on mobile
+            chatContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function showMessage(text, type) {
