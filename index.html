@@ -59,6 +59,21 @@
             border-color: #C89B3C;
         }
 
+        /* League Lookup Form Fixes */
+        #summoner-name, #region {
+            color: #1e2328 !important;
+            background-color: #ffffff !important;
+        }
+
+        #summoner-name::placeholder {
+            color: #666666 !important;
+        }
+
+        #summoner-name:focus, #region:focus {
+            color: #1e2328 !important;
+            background-color: #ffffff !important;
+        }
+
         /* Chat Widget Styles */
         .chat-container {
             position: fixed;
@@ -219,6 +234,17 @@
         @keyframes pulse {
             0%, 100% { opacity: 0.6; }
             50% { opacity: 1; }
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(92, 219, 149, 0.3);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 30px rgba(92, 219, 149, 0.6);
+            }
         }
 
         .connection-status {
@@ -524,6 +550,41 @@
             
             resultsDiv.style.display = 'block';
             resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Integrate with chat - suggest asking about the summoner
+            suggestChatQuestion(data.summoner.gameName, data.summoner.tagLine);
+        }
+
+        function suggestChatQuestion(gameName, tagLine) {
+            const chatInput = document.getElementById('chatInput');
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Pre-fill chat input with suggestion
+            const suggestion = `Tell me about ${gameName}#${tagLine}'s champion pool and playstyle`;
+            chatInput.value = suggestion;
+            
+            // Add a visual hint in chat messages
+            const messagesContainer = document.getElementById('chatMessages');
+            const hintDiv = document.createElement('div');
+            hintDiv.className = 'message assistant-message';
+            hintDiv.innerHTML = `💡 <em>I can help you analyze ${gameName}#${tagLine}! The chat input has been pre-filled with a suggested question, or ask me anything about this summoner.</em>`;
+            messagesContainer.appendChild(hintDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Expand chat if minimized and add a subtle animation
+            if (isMinimized) {
+                toggleChat();
+            }
+            
+            // Add a gentle pulse to draw attention to chat
+            chatContainer.style.animation = 'gentle-pulse 2s ease';
+            setTimeout(() => {
+                chatContainer.style.animation = '';
+            }, 2000);
+            
+            // Focus the chat input
+            chatInput.focus();
+            chatInput.select(); // Select the text so user can easily replace or edit
         }
 
         function showMessage(text, type) {
