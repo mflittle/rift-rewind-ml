@@ -551,23 +551,25 @@
             resultsDiv.style.display = 'block';
             resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
-            // Integrate with chat - suggest asking about the summoner
-            suggestChatQuestion(data.summoner.gameName, data.summoner.tagLine);
+            // Integrate with chat - suggest asking about the summoner's top champion
+            if (data.topChampions && data.topChampions.length > 0) {
+                suggestChatQuestion(data.topChampions[0].championName);
+            }
         }
 
-        function suggestChatQuestion(gameName, tagLine) {
+        function suggestChatQuestion(topChampion) {
             const chatInput = document.getElementById('chatInput');
             const chatContainer = document.getElementById('chatContainer');
             
-            // Pre-fill chat input with suggestion
-            const suggestion = `Tell me about ${gameName}#${tagLine}'s champion pool and playstyle`;
+            // Pre-fill chat input with suggestion about their top champion
+            const suggestion = `What are the best items and strategies for ${topChampion}?`;
             chatInput.value = suggestion;
             
             // Add a visual hint in chat messages
             const messagesContainer = document.getElementById('chatMessages');
             const hintDiv = document.createElement('div');
             hintDiv.className = 'message assistant-message';
-            hintDiv.innerHTML = `💡 <em>I can help you analyze ${gameName}#${tagLine}! The chat input has been pre-filled with a suggested question, or ask me anything about this summoner.</em>`;
+            hintDiv.innerHTML = `💡 <em>I can help you learn more about ${topChampion}! The chat has been pre-filled with a suggested question, or ask me anything about League of Legends champions, items, or strategies.</em>`;
             messagesContainer.appendChild(hintDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
