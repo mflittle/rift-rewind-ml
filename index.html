@@ -172,17 +172,22 @@
             padding: 15px;
             display: flex;
             gap: 10px;
+            align-items: flex-end;
         }
 
         .chat-input {
             flex: 1;
             padding: 10px 15px;
             border: 2px solid #5cdb95;
-            border-radius: 20px;
+            border-radius: 12px;
             outline: none;
             background: rgba(30, 35, 40, 0.8);
             color: #e0e0e0;
             font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            line-height: 1.4;
+            min-height: 44px;
         }
 
         .chat-input::placeholder {
@@ -384,13 +389,13 @@
         </div>
         
         <div class="chat-input-container">
-            <input 
-                type="text" 
+            <textarea 
                 class="chat-input" 
                 id="chatInput" 
                 placeholder="Ask about League of Legends..."
                 onkeypress="handleKeyPress(event)"
-            >
+                rows="2"
+            ></textarea>
             <button class="chat-send-btn" onclick="sendMessage()">
                 ➤
             </button>
@@ -616,12 +621,14 @@
         function connectToWebSocket() {
             try {
                 updateConnectionStatus('Connecting...');
+                showConnectingState();
                 
                 socket = new WebSocket(WEBSOCKET_URL);
                 
                 socket.onopen = () => {
                     console.log('✅ Connected to AI Chat WebSocket');
                     updateConnectionStatus('Connected');
+                    hideConnectingState();
                     isConnected = true;
                     
                     // Process any queued messages
@@ -658,13 +665,26 @@
                     updateConnectionStatus('Disconnected');
                     
                     // Attempt to reconnect after 3 seconds
-                    setTimeout(connectToWebSocket, 3000);
+                    setTimeout(() => {
+                        showConnectingState();
+                        connectToWebSocket();
+                    }, 3000);
                 };
                 
                 socket.onerror = (error) => {
                     console.error('❌ WebSocket error:', error);
                     updateConnectionStatus('Error');
                     isConnected = false;
+                    hideConnectingState();
+                    
+                    // Show error message in chat
+                    const messagesContainer = document.getElementById('chatMessages');
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'message assistant-message';
+                    errorDiv.style.color = '#FF6B6B';
+                    errorDiv.textContent = '⚠️ Connection error. Retrying in 3 seconds...';
+                    messagesContainer.appendChild(errorDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 };
                 
             } catch (error) {
@@ -741,6 +761,25 @@
             }
         }
 
+        function showConnectingState() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const connectingDiv = document.createElement('div');
+            
+            connectingDiv.className = 'typing-indicator';
+            connectingDiv.id = 'connectingIndicator';
+            connectingDiv.textContent = '🔌 Connecting to League Expert...';
+            
+            messagesContainer.appendChild(connectingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideConnectingState() {
+            const connectingIndicator = document.getElementById('connectingIndicator');
+            if (connectingIndicator) {
+                connectingIndicator.remove();
+            }
+        }
+
         function updateConnectionStatus(status) {
             const statusElement = document.getElementById('connectionStatus');
             statusElement.textContent = status;
@@ -762,7 +801,9 @@
         }
 
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
+            // Enter sends message, Shift+Enter creates new line
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent new line
                 sendMessage();
             }
         }
