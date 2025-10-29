@@ -8,6 +8,58 @@
     
     <!-- Chat Widget Styles -->
     <style>
+        /* Hero Section - League of Legends Theme */
+        .hero {
+            padding: 40px 20px !important;
+            background: linear-gradient(135deg, #0a1428 0%, #1e2328 50%, #0a1428 100%);
+            border-bottom: 3px solid #C89B3C;
+            box-shadow: 0 4px 20px rgba(200, 155, 60, 0.2);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .hero h1 {
+            color: #C89B3C;
+            text-shadow: 0 0 10px rgba(200, 155, 60, 0.5);
+            margin: 15px 0 10px 0 !important;
+            font-size: 2em;
+        }
+
+        .hero .tagline {
+            color: #0BC6E3;
+            font-size: 1.1em;
+            margin: 10px 0 20px 0 !important;
+            text-shadow: 0 0 8px rgba(11, 198, 227, 0.4);
+        }
+
+        .hero .profile-photo {
+            width: 120px !important;
+            height: 120px !important;
+            border: 3px solid #C89B3C;
+            box-shadow: 0 0 20px rgba(200, 155, 60, 0.4);
+            margin-bottom: 15px;
+        }
+
+        .linkedin-link {
+            display: inline-block;
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #0077B5 0%, #005885 100%);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            border: 2px solid #0BC6E3;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(11, 198, 227, 0.3);
+        }
+
+        .linkedin-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(11, 198, 227, 0.5);
+            border-color: #C89B3C;
+        }
+
+        /* Chat Widget Styles */
         .chat-container {
             position: fixed;
             bottom: 20px;
@@ -189,8 +241,8 @@
         <section class="hero">
             <img src="profile.png" alt="Michael Little" class="profile-photo">
             <h1>Mike Little</h1>
-            <p class="tagline">Cloud Builder & AWS Enthusiast</p>
-            <a href="https://builder.aws.com/community/@mikelnyc" target="_blank" class="aws-link">AWS Builder Center Profile</a>
+            <p class="tagline">Gamer & AWS Architect</p>
+            <a href="https://www.linkedin.com/in/michaelflittle/" target="_blank" class="linkedin-link">LinkedIn Profile</a>
         </section>
 
         <!-- LEAGUE DATA LOOKUP SECTION -->
