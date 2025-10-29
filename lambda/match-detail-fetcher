@@ -1,0 +1,382 @@
+#Lambda.py function to pull data from the Riot APPI for the Knowledge Base
+import json
+import boto3
+import urllib3
+from datetime import datetime
+from decimal import Decimal
+
+def lambda_handler(event, context):
+    """
+    Fetches detailed match data for meta analysis.
+    Expected event: {"matchId": "NA1_1234567890", "region": "na1"}
+    OR batch: {"matchIds": ["NA1_123", "NA1_456"], "region": "na1"}
+    """
+    
+    # Configuration
+    bucket_name = 'rift-rewind-match-data-ml-nyc'
+    dynamodb = boto3.resource('dynamodb')
+    match_cache_table = dynamodb.Table('riot-match-cache')  # You'll need to create this
+    
+    try:
+        # Handle both single match and batch requests
+        match_ids = event.get('matchIds', [])
+        if not match_ids and event.get('matchId'):
+            match_ids = [event['matchId']]
+        
+        region = event.get('region', 'na1')
+        
+        if not match_ids:
+            return {
+                'statusCode': 400,
+                'error': 'matchId or matchIds required'
+            }
+        
+        # Get API key
+        ssm = boto3.client('ssm')
+        try:
+            parameter = ssm.get_parameter(
+                Name='/rift-rewind-challenge2/riot-api-key',
+                WithDecryption=True
+            )
+            api_key = parameter['Parameter']['Value']
+        except Exception as e:
+            print(f"Failed to get API key: {str(e)}")
+            return {
+                'statusCode': 500,
+                'error': 'Failed to retrieve API key'
+            }
+        
+        http = urllib3.PoolManager()
+        s3 = boto3.client('s3')
+        headers = {'X-Riot-Token': api_key}
+        routing_value = get_routing_value(region)
+        
+        # Process each match
+        results = []
+        for match_id in match_ids:
+            try:
+                # Check if already processed
+                if is_match_cached(match_cache_table, match_id):
+                    print(f"Match {match_id} already cached, skipping")
+                    results.append({
+                        'matchId': match_id,
+                        'status': 'cached',
+                        'message': 'Already processed'
+                    })
+                    continue
+                
+                # Fetch match data
+                match_url = f"https://{routing_value}.api.riotgames.com/lol/match/v5/matches/{match_id}"
+                match_response = http.request('GET', match_url, headers=headers)
+                
+                if match_response.status == 404:
+                    print(f"Match {match_id} not found")
+                    results.append({
+                        'matchId': match_id,
+                        'status': 'not_found',
+                        'error': 'Match not found'
+                    })
+                    continue
+                elif match_response.status == 403:
+                    return {
+                        'statusCode': 403,
+                        'error': 'API key expired or rate limited'
+                    }
+                elif match_response.status != 200:
+                    print(f"Failed to fetch match {match_id}: {match_response.status}")
+                    results.append({
+                        'matchId': match_id,
+                        'status': 'error',
+                        'error': f'API returned {match_response.status}'
+                    })
+                    continue
+                
+                match_data = json.loads(match_response.data.decode('utf-8'))
+                
+                # Filter by criteria (ranked, minimum duration, etc.)
+                if not should_process_match(match_data):
+                    print(f"Match {match_id} filtered out (wrong queue/duration)")
+                    results.append({
+                        'matchId': match_id,
+                        'status': 'filtered',
+                        'message': 'Does not meet criteria'
+                    })
+                    continue
+                
+                # Extract structured data for meta analysis
+                structured_data = extract_meta_analysis_data(match_data)
+                
+                # Save to S3 organized by patch and queue
+                patch = structured_data['match_metadata']['patch']
+                queue = structured_data['match_metadata']['queue']
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                
+                # S3 key structure: matches/{patch}/{queue}/{match_id}.json
+                s3_key = f"matches/{patch}/{queue}/{match_id}_{timestamp}.json"
+                
+                s3.put_object(
+                    Bucket=bucket_name,
+                    Key=s3_key,
+                    Body=json.dumps(structured_data, indent=2),
+                    ContentType='application/json'
+                )
+                
+                # Mark as cached in DynamoDB
+                cache_match(match_cache_table, match_id, s3_key, structured_data)
+                
+                print(f"Successfully processed match {match_id}")
+                results.append({
+                    'matchId': match_id,
+                    'status': 'success',
+                    's3Location': s3_key,
+                    'patch': patch,
+                    'avgRank': structured_data['match_metadata'].get('avg_rank')
+                })
+                
+            except Exception as e:
+                print(f"Error processing match {match_id}: {str(e)}")
+                results.append({
+                    'matchId': match_id,
+                    'status': 'error',
+                    'error': str(e)
+                })
+        
+        return {
+            'statusCode': 200,
+            'totalMatches': len(match_ids),
+            'processed': len([r for r in results if r['status'] == 'success']),
+            'cached': len([r for r in results if r['status'] == 'cached']),
+            'filtered': len([r for r in results if r['status'] == 'filtered']),
+            'errors': len([r for r in results if r['status'] == 'error']),
+            'results': results
+        }
+        
+    except Exception as e:
+        print(f"Lambda error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'statusCode': 500,
+            'error': str(e)
+        }
+
+def should_process_match(match_data):
+    """
+    Filter matches based on meta analysis criteria.
+    Only process ranked games with sufficient duration.
+    """
+    info = match_data['info']
+    
+    # Only ranked Solo/Duo (queueId 420) or Flex (queueId 440)
+    queue_id = info.get('queueId')
+    if queue_id not in [420, 440]:
+        return False
+    
+    # Minimum game duration (15 minutes = 900 seconds)
+    # Filters out surrenders and remakes
+    duration = info.get('gameDuration', 0)
+    if duration < 900:
+        return False
+    
+    # Could add additional filters here:
+    # - Minimum average rank
+    # - Specific patch versions
+    # - Region filtering
+    
+    return True
+
+def extract_meta_analysis_data(match_data):
+    """
+    Extract ALL participant data in a structure optimized for meta analysis queries.
+    This is the key transformation for your use case!
+    """
+    info = match_data['info']
+    metadata = match_data['metadata']
+    
+    # Extract patch version (e.g., "14.20.123.4567" -> "14.20")
+    game_version = info.get('gameVersion', '')
+    patch = '.'.join(game_version.split('.')[:2]) if game_version else 'unknown'
+    
+    # Determine queue type
+    queue_map = {
+        420: 'RANKED_SOLO',
+        440: 'RANKED_FLEX',
+        450: 'ARAM',
+        400: 'NORMAL_DRAFT'
+    }
+    queue_type = queue_map.get(info.get('queueId'), 'OTHER')
+    
+    # Calculate average rank (if available from player data)
+    # Note: Match data doesn't include rank, you'd need to fetch separately
+    # For now, we'll leave this as a placeholder
+    avg_rank = "UNKNOWN"
+    
+    # Build structured output
+    structured = {
+        'match_metadata': {
+            'match_id': metadata['matchId'],
+            'data_version': metadata['dataVersion'],
+            'patch': patch,
+            'game_version': game_version,
+            'region': metadata['matchId'].split('_')[0],  # e.g., "NA1"
+            'queue': queue_type,
+            'queue_id': info['queueId'],
+            'avg_rank': avg_rank,
+            'game_creation': info['gameCreation'],
+            'game_duration': info['gameDuration'],
+            'game_end_timestamp': info.get('gameEndTimestamp'),
+            'game_mode': info['gameMode'],
+            'game_type': info['gameType'],
+            'winning_team': 'blue' if any(p['win'] and p['teamId'] == 100 for p in info['participants']) else 'red'
+        },
+        'participants': [],
+        'team_stats': extract_team_stats(info)
+    }
+    
+    # Extract ALL 10 participants (not just one!)
+    for participant in info['participants']:
+        # Calculate KDA
+        kills = participant['kills']
+        deaths = participant['deaths']
+        assists = participant['assists']
+        kda = round((kills + assists) / max(deaths, 1), 2)
+        
+        # Total CS
+        total_cs = participant['totalMinionsKilled'] + participant.get('neutralMinionsKilled', 0)
+        cs_per_min = round(total_cs / (info['gameDuration'] / 60), 1)
+        
+        participant_data = {
+            'puuid': participant['puuid'],
+            'summoner_name': participant.get('riotIdGameName', participant.get('summonerName', 'Unknown')),
+            'summoner_tag': participant.get('riotIdTagline', ''),
+            'champion': participant['championName'],
+            'champion_id': participant['championId'],
+            'position': participant['teamPosition'],
+            'individual_position': participant['individualPosition'],
+            'team': 'blue' if participant['teamId'] == 100 else 'red',
+            'team_id': participant['teamId'],
+            'win': participant['win'],
+            
+            # Core stats
+            'kills': kills,
+            'deaths': deaths,
+            'assists': assists,
+            'kda': kda,
+            
+            # Farm stats
+            'total_cs': total_cs,
+            'cs_per_min': cs_per_min,
+            'minions_killed': participant['totalMinionsKilled'],
+            'neutral_minions_killed': participant.get('neutralMinionsKilled', 0),
+            
+            # Economy
+            'gold_earned': participant['goldEarned'],
+            'gold_per_min': round(participant['goldEarned'] / (info['gameDuration'] / 60), 1),
+            
+            # Combat stats
+            'damage_dealt_champions': participant['totalDamageDealtToChampions'],
+            'damage_taken': participant['totalDamageTaken'],
+            'damage_per_min': round(participant['totalDamageDealtToChampions'] / (info['gameDuration'] / 60), 1),
+            'vision_score': participant['visionScore'],
+            'vision_per_min': round(participant['visionScore'] / (info['gameDuration'] / 60), 2),
+            
+            # Build info
+            'items': [
+                participant['item0'],
+                participant['item1'],
+                participant['item2'],
+                participant['item3'],
+                participant['item4'],
+                participant['item5']
+            ],
+            'trinket': participant['item6'],
+            'summoner_spells': [
+                participant['summoner1Id'],
+                participant['summoner2Id']
+            ],
+            
+            # Runes (for build analysis)
+            'primary_rune_style': participant['perks']['styles'][0]['style'],
+            'sub_rune_style': participant['perks']['styles'][1]['style'],
+            'keystone': participant['perks']['styles'][0]['selections'][0]['perk'],
+            
+            # Champion mastery/level
+            'champ_level': participant['champLevel'],
+            'champ_experience': participant['champExperience']
+        }
+        
+        structured['participants'].append(participant_data)
+    
+    return structured
+
+def extract_team_stats(info):
+    """Extract team-level statistics (objectives, bans, etc.)"""
+    teams = {}
+    
+    for team in info['teams']:
+        team_key = 'blue' if team['teamId'] == 100 else 'red'
+        teams[team_key] = {
+            'win': team['win'],
+            'first_blood': team['objectives'].get('champion', {}).get('first', False),
+            'first_tower': team['objectives'].get('tower', {}).get('first', False),
+            'first_baron': team['objectives'].get('baron', {}).get('first', False),
+            'first_dragon': team['objectives'].get('dragon', {}).get('first', False),
+            'first_rift_herald': team['objectives'].get('riftHerald', {}).get('first', False),
+            'tower_kills': team['objectives'].get('tower', {}).get('kills', 0),
+            'inhibitor_kills': team['objectives'].get('inhibitor', {}).get('kills', 0),
+            'baron_kills': team['objectives'].get('baron', {}).get('kills', 0),
+            'dragon_kills': team['objectives'].get('dragon', {}).get('kills', 0),
+            'rift_herald_kills': team['objectives'].get('riftHerald', {}).get('kills', 0),
+            'bans': [ban['championId'] for ban in team.get('bans', [])]
+        }
+    
+    return teams
+
+def is_match_cached(table, match_id):
+    """Check if match has already been processed"""
+    try:
+        response = table.get_item(Key={'match_id': match_id})
+        return 'Item' in response
+    except Exception as e:
+        print(f"Error checking cache: {str(e)}")
+        return False
+
+def cache_match(table, match_id, s3_key, structured_data):
+    """Store match metadata in DynamoDB for deduplication and quick lookup"""
+    try:
+        metadata = structured_data['match_metadata']
+        table.put_item(
+            Item={
+                'match_id': match_id,
+                'processed_at': datetime.now().isoformat(),
+                's3_key': s3_key,
+                'patch': metadata['patch'],
+                'queue': metadata['queue'],
+                'game_duration': Decimal(str(metadata['game_duration'])),
+                'region': metadata['region']
+            }
+        )
+    except Exception as e:
+        print(f"Error caching match: {str(e)}")
+
+def get_routing_value(region):
+    """Map platform region to routing value for Riot API"""
+    routing_map = {
+        'na1': 'americas',
+        'br1': 'americas',
+        'la1': 'americas',
+        'la2': 'americas',
+        'euw1': 'europe',
+        'eun1': 'europe',
+        'tr1': 'europe',
+        'ru': 'europe',
+        'kr': 'asia',
+        'jp1': 'asia',
+        'oc1': 'sea',
+        'ph2': 'sea',
+        'sg2': 'sea',
+        'th2': 'sea',
+        'tw2': 'sea',
+        'vn2': 'sea'
+    }
+    return routing_map.get(region, 'americas')
