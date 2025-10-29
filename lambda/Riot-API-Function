@@ -1,0 +1,218 @@
+#Lambda.py file used for Summoner lookup
+import json
+import boto3
+import urllib3
+
+def lambda_handler(event, context):
+    print("Lambda invoked!")
+    
+    try:
+        body = json.loads(event['body'])
+        riot_id = body.get('riotId', '').strip()
+        region = body.get('region', 'americas')
+        
+        # Validate Riot ID format
+        if not riot_id:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Riot ID is required',
+                    'message': 'Please enter your Riot ID in the format: GameName#TAG'
+                })
+            }
+        
+        if '#' not in riot_id:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Invalid Riot ID format',
+                    'message': 'Riot ID must include your tagline (e.g., PlayerName#NA1)'
+                })
+            }
+        
+        game_name, tag_line = riot_id.split('#', 1)
+        
+        if not game_name or not tag_line:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': 'Invalid Riot ID',
+                    'message': 'Both game name and tagline are required'
+                })
+            }
+        
+        # Get API key from Parameter Store
+        print("Fetching API key from Parameter Store...")
+        ssm = boto3.client('ssm')
+        try:
+            parameter = ssm.get_parameter(
+                Name='/rift-rewind/riot-api-key',
+                WithDecryption=True
+            )
+            api_key = parameter['Parameter']['Value']
+            print("API key retrieved successfully")
+        except Exception as e:
+            print(f"Failed to retrieve API key: {str(e)}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Configuration error',
+                    'message': 'Unable to access API credentials'
+                })
+            }
+        
+        # Initialize HTTP client
+        http = urllib3.PoolManager()
+        headers = {'X-Riot-Token': api_key}
+        
+        # Step 1: Get PUUID using Account-V1 API
+        account_url = f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}"
+        print(f"Calling Account API: {account_url}")
+        
+        account_response = http.request('GET', account_url, headers=headers)
+        print(f"Account API response status: {account_response.status}")
+        
+        if account_response.status == 404:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({
+                    'error': 'Riot ID not found',
+                    'message': f'No account found for {game_name}#{tag_line}. Please check your Riot ID and try again.'
+                })
+            }
+        elif account_response.status == 403:
+            return {
+                'statusCode': 403,
+                'body': json.dumps({
+                    'error': 'API key expired',
+                    'message': 'The API key has expired. Please contact the site administrator.'
+                })
+            }
+        elif account_response.status == 429:
+            return {
+                'statusCode': 429,
+                'body': json.dumps({
+                    'error': 'Rate limit exceeded',
+                    'message': 'Too many requests. Please try again in a moment.'
+                })
+            }
+        elif account_response.status != 200:
+            error_data = account_response.data.decode('utf-8')
+            print(f"Error response: {error_data}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Failed to fetch account data',
+                    'message': 'Unable to retrieve account information from Riot servers'
+                })
+            }
+        
+        account_data = json.loads(account_response.data.decode('utf-8'))
+        puuid = account_data['puuid']
+        print(f"PUUID retrieved: {puuid}")
+        
+        # Step 2: Get summoner data using PUUID
+        platform = body.get('platform', 'na1')
+        summoner_url = f"https://{platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}"
+        print(f"Calling Summoner API: {summoner_url}")
+        
+        summoner_response = http.request('GET', summoner_url, headers=headers)
+        print(f"Summoner API response status: {summoner_response.status}")
+        
+        if summoner_response.status != 200:
+            error_data = summoner_response.data.decode('utf-8')
+            print(f"Error response: {error_data}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'error': 'Failed to fetch summoner data',
+                    'message': 'Unable to retrieve summoner information'
+                })
+            }
+        
+        summoner_data = json.loads(summoner_response.data.decode('utf-8'))
+        print(f"Summoner data retrieved")
+        
+        # Step 3: Get champion mastery data
+        mastery_url = f"https://{platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3"
+        print(f"Calling mastery API: {mastery_url}")
+        
+        mastery_response = http.request('GET', mastery_url, headers=headers)
+        print(f"Mastery API response status: {mastery_response.status}")
+        
+        mastery_data = []
+        if mastery_response.status == 200:
+            mastery_data = json.loads(mastery_response.data.decode('utf-8'))
+        
+        # Step 4: Get champion names from Data Dragon
+        print("Fetching champion data from Data Dragon...")
+        ddragon_url = "https://ddragon.leagueoflegends.com/cdn/14.20.1/data/en_US/champion.json"
+        ddragon_response = http.request('GET', ddragon_url)
+        
+        champion_map = {}
+        if ddragon_response.status == 200:
+            ddragon_data = json.loads(ddragon_response.data.decode('utf-8'))
+            for champ_key, champ_data in ddragon_data['data'].items():
+                champion_map[int(champ_data['key'])] = {
+                    'name': champ_data['name'],
+                    'title': champ_data['title'],
+                    'image': champ_data['image']['full']
+                }
+        
+        # Enhance mastery data with champion names
+        enhanced_mastery = []
+        for champ in mastery_data:
+            champ_id = champ['championId']
+            champ_info = champion_map.get(champ_id, {
+                'name': f'Champion {champ_id}',
+                'title': 'Unknown',
+                'image': 'default.png'
+            })
+            enhanced_mastery.append({
+                'championId': champ_id,
+                'championName': champ_info['name'],
+                'championTitle': champ_info['title'],
+                'championImage': champ_info['image'],
+                'championLevel': champ['championLevel'],
+                'championPoints': champ['championPoints']
+            })
+        
+        # Format response
+        response_data = {
+            'summoner': {
+                'gameName': game_name,
+                'tagLine': tag_line,
+                'level': summoner_data['summonerLevel'],
+                'puuid': puuid,
+                'profileIconId': summoner_data.get('profileIconId', 0)
+            },
+            'topChampions': enhanced_mastery
+        }
+        
+        print("Returning success response")
+        return {
+            'statusCode': 200,
+            'body': json.dumps(response_data)
+        }
+        
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {str(e)}")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({
+                'error': 'Invalid request format',
+                'message': 'The request data is not properly formatted'
+            })
+        }
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Unexpected error: {str(e)}")
+        print(f"Traceback: {error_trace}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': 'Internal server error',
+                'message': 'An unexpected error occurred. Please try again later.'
+            })
+        }
