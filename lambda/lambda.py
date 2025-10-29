@@ -1,0 +1,215 @@
+# Chat-Agent-Handler Lambda
+import json
+import boto3
+import os
+from strands import Agent, tool
+from strands.models import BedrockModel
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+KNOWLEDGE_BASE_ID = os.environ.get('KNOWLEDGE_BASE_ID')
+REGION = os.environ.get('REGION', 'us-east-1')
+MODEL_ID = os.environ.get('MODEL_ID')
+
+# Initialize Bedrock client
+bedrock_client = boto3.client('bedrock-agent-runtime', region_name=REGION)
+
+# ============================================================================
+# SYSTEM PROMPT
+# ============================================================================
+
+SYSTEM_PROMPT = """You are a League of Legends analytics expert with conversation memory. 
+You have access to match data through a knowledge base. When you receive match data chunks, 
+analyze them to provide specific data-driven insights about champion performance, meta trends, 
+and gameplay patterns. Always cite your analysis based on the data provided."""
+
+# ============================================================================
+# KNOWLEDGE BASE TOOLS (FAST VERSION - RETRIEVE ONLY)
+# ============================================================================
+
+@tool
+def query_match_data(query: str, max_results: int = 3) -> str:
+    """Query the League of Legends match data knowledge base - returns raw match data chunks."""
+    try:
+        # Use RETRIEVE only (not retrieve_and_generate) - much faster!
+        response = bedrock_client.retrieve(
+            knowledgeBaseId=KNOWLEDGE_BASE_ID,
+            retrievalQuery={'text': query},
+            retrievalConfiguration={
+                'vectorSearchConfiguration': {
+                    'numberOfResults': max_results
+                }
+            }
+        )
+        
+        # Extract just the text chunks
+        chunks = []
+        for result in response.get('retrievalResults', []):
+            content = result.get('content', {}).get('text', '')
+            if content:
+                chunks.append(content[:500])  # First 500 chars of each chunk
+        
+        if not chunks:
+            return "No match data found for this query."
+        
+        # Return raw data for the main agent to synthesize
+        return f"Match data found ({len(chunks)} sources):\n\n" + "\n\n---\n\n".join(chunks)
+        
+    except Exception as e:
+        return f"Error querying match data: {str(e)}"
+
+
+@tool
+def analyze_champion_performance(champion_name: str, role: str = None) -> str:
+    """Get match data for a specific champion's performance."""
+    query_parts = [f"performance data for {champion_name}"]
+    
+    if role:
+        query_parts.append(f"in {role} role")
+        
+    query_parts.append("win rate KDA items builds")
+    
+    full_query = " ".join(query_parts)
+    return query_match_data(full_query, max_results=2)
+
+
+@tool
+def get_item_builds(champion_name: str) -> str:
+    """Get item build data for a specific champion."""
+    query = f"{champion_name} item builds core items popular builds win rates"
+    return query_match_data(query, max_results=2)
+
+
+@tool
+def get_champion_stats(champion_name: str) -> str:
+    """Get general statistics for a champion."""
+    query = f"{champion_name} statistics win rate pick rate ban rate tier list"
+    return query_match_data(query, max_results=2)
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def send_response(connection_id, domain_name, stage, data):
+    """Send a message back to the client through WebSocket."""
+    endpoint = f'https://{domain_name}/{stage}'
+    client = boto3.client('apigatewaymanagementapi', endpoint_url=endpoint)
+    
+    try:
+        print(f"Sending message to connection {connection_id}")
+        client.post_to_connection(
+            ConnectionId=connection_id,
+            Data=json.dumps(data).encode('utf-8')
+        )
+        print(f"Message sent successfully")
+        
+    except client.exceptions.GoneException:
+        print(f"Connection {connection_id} is no longer available")
+        raise
+    except Exception as e:
+        print(f"Error sending message: {str(e)}")
+        raise
+
+
+def handle_message(event, messages):
+    """Process user messages using the Strands AI agent."""
+    try:
+        # Initialize agent with simplified, faster tools
+        agent = Agent(
+            model=BedrockModel(model_id=MODEL_ID, region_name=REGION),
+            system_prompt=SYSTEM_PROMPT,
+            tools=[query_match_data, analyze_champion_performance, 
+                   get_item_builds, get_champion_stats]
+        )
+        
+        user_message = messages[-1]['content'] if messages else ''
+        print(f"Processing user message: {user_message[:100]}...")
+        
+        response = agent(user_message)
+        print(f"Agent response generated")
+        
+        return str(response)
+        
+    except Exception as e:
+        print(f"Error in handle_message: {str(e)}")
+        raise
+
+# ============================================================================
+# MAIN LAMBDA HANDLER
+# ============================================================================
+
+def lambda_handler(event, context):
+    """Main Lambda handler for WebSocket API Gateway events."""
+    try:
+        request_context = event['requestContext']
+        connection_id = request_context['connectionId']
+        domain_name = request_context['domainName']
+        stage = request_context['stage']
+        route_key = request_context.get('routeKey')
+        
+        print(f"Received event: route={route_key}, connection={connection_id}")
+        
+        if route_key == '$default':
+            body = json.loads(event.get('body', '{}'))
+            messages = body.get('messages', [])
+            
+            print(f"Processing {len(messages)} message(s)")
+            
+            try:
+                response_text = handle_message(event, messages)
+                
+                send_response(connection_id, domain_name, stage, {
+                    'type': 'chunk',
+                    'content': response_text
+                })
+                
+                send_response(connection_id, domain_name, stage, {
+                    'type': 'end',
+                    'content': ''
+                })
+                
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({
+                        'type': 'chunk',
+                        'content': response_text
+                    })
+                }
+                
+            except Exception as e:
+                error_message = f"Error processing message: {str(e)}"
+                print(f"{error_message}")
+                
+                try:
+                    send_response(connection_id, domain_name, stage, {
+                        'type': 'error',
+                        'content': 'Sorry, I encountered an error processing your message.'
+                    })
+                except:
+                    print("Could not send error message to client")
+                
+                return {
+                    'statusCode': 500,
+                    'body': json.dumps({'message': str(e)})
+                }
+        
+        # Return success for connection/disconnection events
+        return {'statusCode': 200, 'body': json.dumps({'message': 'OK'})}
+        
+    except KeyError as e:
+        error_message = f"Missing required field in event: {str(e)}"
+        print(f"{error_message}")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': error_message})
+        }
+        
+    except Exception as e:
+        error_message = f"Unexpected error in lambda_handler: {str(e)}"
+        print(f"{error_message}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'message': 'Internal server error'})
+        }
